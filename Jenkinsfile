@@ -676,17 +676,21 @@ pipeline {
                                 }
                             }
                         }
-                        // stage("sccache") {
-                        //     when {
-                        //         allOf {
-                        //             expression { !DISABLE_SCCACHE }
-                        //         }
-                        //     }
-                        //     steps {
-                        //         echo "Enabling sccache"
-                        //         powershell "npm config --userconfig=.npmrc set sccache sccache"
-                        //     }
-                        // }
+                        stage("sccache") {
+                            when {
+                                allOf {
+                                    expression { !DISABLE_SCCACHE }
+                                }
+                            }
+                            steps {
+                                echo "Enabling sccache"
+                                powershell """
+                                    sccache --start-server
+                                    \$ErrorActionPreference = "Stop"
+                                    npm config --userconfig=.npmrc set sccache sccache
+                                """
+                            }
+                        }
                         stage("build") {
                             environment {
                                 SIGN_WIDEVINE_CERT = credentials("widevine_brave_prod_cert.der")
@@ -811,6 +815,7 @@ def setEnv() {
     GITHUB_CREDENTIAL_ID = "brave-builds-github-token-for-pr-builder"
     RUST_LOG = "sccache=warn"
     RUST_BACKTRACE = "1"
+    SCCACHE_IDLE_TIMEOUT = 0
     SKIP = false
     SKIP_ANDROID = false
     SKIP_IOS = false
